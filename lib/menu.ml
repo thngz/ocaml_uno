@@ -1,4 +1,4 @@
-type menu_item = {title: string; shortcut: string}
+type menu_item = {title: string; shortcut: string; action: unit -> unit}
 
 let draw_item item =
     Printf.printf "%s) %s\n" item.shortcut item.title
