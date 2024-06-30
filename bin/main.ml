@@ -1,23 +1,29 @@
 open Unogame.Menu
+open Unogame.Common
 open Printf
-let menu_items: menu_item list = [ 
-    {title = "Start"; shortcut= "1"; action=(fun () -> print_endline "start")};
-    {title = "Options"; shortcut= "2"; action=(fun () -> print_endline "options")};
-    {title = "View previous games"; shortcut= "3"; action=(fun () -> print_endline "prev")};
-    {title = "Exit"; shortcut= "e"; action=(fun () -> print_endline "Exiting"; exit 0)};
-];;
 
-let rec game_loop () =
-    draw menu_items;
+
+let main_menu = create_menu menu_items
+let options_menu = create_menu options_menu_items
+
+let rec game_loop (model: model): unit =
+    model.view ();
+    
     let selectionText = read_line () in
-    let filtered = List.filter (fun x -> x.shortcut = selectionText) menu_items in 
+    let filtered = List.filter (fun x -> x.shortcut = selectionText) model.items in 
     match filtered with
-            | [] -> print_endline "Invalid choice!"
-            | x :: _ ->  printf "You chose: ";
+            | [] -> ignore (Sys.command "clear"); print_endline "Invalid choice!"; game_loop model;
+            | selected :: _ -> 
+                    ignore (Sys.command "clear");
+                    printf "You chose: ";
                     List.iter draw_item filtered;
-                    x.action ();
-                
-    game_loop ()
+                    update (selected.action ())
+and update (message: message): unit =
+    match message with
+        | Start -> game_loop main_menu
+        | Options -> game_loop options_menu
+        | ViewGames -> game_loop main_menu
+        | Exit -> exit 0
 
 
-let () = game_loop ()
+let () = game_loop main_menu
