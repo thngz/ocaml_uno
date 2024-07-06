@@ -2,28 +2,47 @@ open Unogame.Menu
 open Unogame.Common
 open Printf
 
+let main_menu = { title = "Main menu"; items = menu_items }
 
-let main_menu = create_menu menu_items
-let options_menu = create_menu options_menu_items
+let options_menu =
+  { title = "Options menu"; items = options_menu_items }
 
-let rec game_loop (model: model): unit =
-    model.view ();
-    
-    let selectionText = read_line () in
-    let filtered = List.filter (fun x -> x.shortcut = selectionText) model.items in 
-    match filtered with
-            | [] -> ignore (Sys.command "clear"); print_endline "Invalid choice!"; game_loop model;
-            | selected :: _ -> 
-                    ignore (Sys.command "clear");
-                    printf "You chose: ";
-                    List.iter draw_item filtered;
-                    update (selected.action ())
-and update (message: message): unit =
-    match message with
-        | Start -> game_loop main_menu
-        | Options -> game_loop options_menu
-        | ViewGames -> game_loop main_menu
-        | Exit -> exit 0
+let player_count_prompt =
+  { title = "Add player count"; items = get_player_count_prompt }
 
+let clear_screen () = ignore (Sys.command "clear")
 
-let () = game_loop main_menu
+type selected_item = SelectedItems of menu_item list | Selection of string | Nil
+
+let get_selection (items: selection_item list): selected_item =
+  let selectionText = read_line () in
+    match items with 
+    | [] -> Nil
+    | MenuItem _ :: _ -> SelectedItems (List.filter (fun x -> x.shortcut = selectionText) items
+    | PromptItem _ :: _ -> Selection selectionText
+
+let rec loop model : unit =
+  List.iter draw_selection_item model.items;
+  match get_selection model.items with
+  | [] ->
+      clear_screen ();
+      print_endline "Invalid choice!";
+      loop model
+  | selected :: _ ->
+      clear_screen ();
+      printf "You chose: %s\n" selected.title;
+      message_handler (selected.action ())
+
+and message_handler (message : message) : unit =
+  match message with
+  | Navigation n -> (
+      match n with
+      | Start -> loop options_menu
+      | PrevGames -> loop main_menu
+      | Exit -> exit 0)
+  | Prompt p -> (
+      match p with
+      | SelectPlayerCount -> loop player_count_prompt
+      | TogglePlayerTypes -> loop main_menu)
+
+let () = loop main_menu

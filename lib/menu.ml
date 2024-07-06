@@ -1,34 +1,49 @@
 open Common
 
-module Menu = Menu
-type menu_item = {title: string; shortcut: string; action: unit -> message};;
+type menu_item = { title : string; shortcut : string; action : unit -> message }
+type prompt_item = { title : string; action : unit -> message }
+type selection_item = MenuItem of menu_item | PromptItem of prompt_item
+type menu = { items : selection_item list; title : string }
 
-type model = {
-    items: menu_item list;
-    view: unit -> unit;
-}
+let menu_items =
+  [
+    MenuItem
+      { title = "Start"; shortcut = "1"; action = (fun () -> Navigation Start) };
+    MenuItem
+      {
+        title = "View previous games";
+        shortcut = "3";
+        action = (fun () -> Navigation PrevGames);
+      };
+    MenuItem
+      { title = "Exit"; shortcut = "e"; action = (fun () -> Navigation Exit) };
+  ]
 
-let draw_item (item: menu_item) =
-    Printf.printf "%s) %s\n" item.shortcut item.title
+let options_menu_items =
+  [
+    PromptItem
+      {
+        title = "Select player amount";
+        action = (fun () -> Prompt SelectPlayerCount);
+      };
+    PromptItem
+      {
+        title = "Toggle player types";
+        action = (fun () -> Prompt TogglePlayerTypes);
+      };
+    MenuItem
+      { title = "Exit"; shortcut = "e"; action = (fun () -> Navigation Exit) };
+  ]
 
-let draw (items: menu_item list) = List.iter draw_item items
+let get_player_count_prompt =
+  [
+    PromptItem {
+      title = "Get player count";
+      action = (fun () -> Prompt SelectPlayerCount);
+    };
+  ]
 
-let menu_items: menu_item list = [ 
-    {title = "Start"; shortcut= "1"; action=(fun () -> Start)};
-    {title = "Options"; shortcut= "2"; action=(fun () -> Options)};
-    {title = "View previous games"; shortcut= "3"; action=(fun () -> ViewGames)};
-    {title = "Exit"; shortcut= "e"; action=(fun () -> Exit)};
-];;
-
-let options_menu_items: menu_item list = [ 
-    {title = "Foo"; shortcut= "1"; action=(fun () -> Start)};
-    {title = "Bar"; shortcut= "2"; action=(fun () -> Options)};
-    {title = "Baz"; shortcut= "3"; action=(fun () -> ViewGames)};
-    {title = "Back"; shortcut= "b"; action=(fun () -> Start)};
-    {title = "Exit"; shortcut= "e"; action=(fun () -> Exit)};
-];;
-
-let create_menu items = {
-    items = items;
-    view = (fun () -> draw items) 
-}
+let draw_selection_item (item : selection_item) =
+  match item with
+  | MenuItem mi -> Printf.printf "%s) %s\n" mi.shortcut mi.title
+  | PromptItem pi -> Printf.printf ">>> %s\n" pi.title
