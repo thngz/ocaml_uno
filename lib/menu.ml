@@ -14,7 +14,7 @@ type menu = { items : selection_item list; title : string }
 let draw_selection_item (item : selection_item) =
   match item with
   | MenuItem mi -> Printf.printf "%s) %s\n" mi.shortcut mi.title
-  | PromptItem pi -> Printf.printf ">>> %s\n" pi.title
+  | PromptItem pi -> Printf.printf "%s >>> " pi.title
 
 let menu_items =
   [
@@ -52,10 +52,8 @@ let get_player_count_prompt =
   [
     PromptItem
       {
-        title = "Get player count";
+        title = "Set player count";
         action = (fun arg -> Prompt (SelectPlayerCount arg));
         selection = None;
       };
-    MenuItem
-      { title = "Back"; shortcut = "b"; action = (fun () -> Navigation Start) };
   ]

@@ -24,33 +24,16 @@ let get_selection (items : selection_item list) =
        | MenuItem m -> MenuItem m
        | PromptItem p -> PromptItem { p with selection = Some selectionText })
 
-let handle_player_count pc loop config =
-  match pc with
-  | Some p ->
-      if String.lowercase_ascii p = "b" then loop options_menu config
-      else
-        loop player_count_prompt
-          {
-            player_count =
-              (match int_of_string_opt p with
-              | Some s -> s
-              | None ->
-                  printf "Please enter correct player count\n";
-                  2);
-          }
-  | None -> loop player_count_prompt config
-
 let rec loop model game_config : unit =
+  clear_screen ();
+  printf "Current player count is: %d\n" game_config.player_count;
   List.iter draw_selection_item model.items;
-  printf "conf is %d\n" game_config.player_count;
 
   match get_selection model.items with
   | None ->
-      clear_screen ();
       print_endline "Invalid choice!";
       loop model game_config
   | Some selected -> (
-      clear_screen ();
       match selected with
       | MenuItem m ->
           printf "You chose: %s\n" m.title;
@@ -60,7 +43,7 @@ let rec loop model game_config : unit =
           | Some s -> message_handler (p.action (Some s)) game_config
           | None -> printf "Prompt returned nothing"))
 
-and message_handler (message : message) (config : game_config) =
+and message_handler message config =
   match message with
   | Navigation n -> (
       match n with
@@ -69,7 +52,18 @@ and message_handler (message : message) (config : game_config) =
       | Exit -> exit 0)
   | Prompt p -> (
       match p with
-      | SelectPlayerCount pc -> handle_player_count pc loop config
+      | SelectPlayerCount pc -> handle_player_count pc config loop
       | TogglePlayerTypes _ -> loop main_menu config)
+
+and handle_player_count player_count_opt config loop =
+  match player_count_opt with
+  | Some input ->
+      if String.lowercase_ascii input = "b" then loop options_menu config
+      else
+        let player_count =
+          safe_str_to_int input config.player_count "player count"
+        in
+        loop player_count_prompt { player_count }
+  | None -> loop player_count_prompt config
 
 let () = loop main_menu { player_count = 2 }
