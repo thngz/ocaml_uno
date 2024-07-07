@@ -1,7 +1,13 @@
 open Common
 
 type menu_item = { title : string; shortcut : string; action : unit -> message }
-type prompt_item = { title : string; action : unit -> message; selection: string option}
+
+type prompt_item = {
+  title : string;
+  action : string option -> message;
+  selection : string option;
+}
+
 type selection_item = MenuItem of menu_item | PromptItem of prompt_item
 type menu = { items : selection_item list; title : string }
 
@@ -30,13 +36,13 @@ let options_menu_items =
       {
         title = "Select player amount";
         shortcut = "1";
-        action = (fun () -> Prompt SelectPlayerCount);
+        action = (fun () -> Prompt (SelectPlayerCount None));
       };
     MenuItem
       {
         title = "Toggle player types";
         shortcut = "2";
-        action = (fun () -> Prompt TogglePlayerTypes);
+        action = (fun () -> Prompt (TogglePlayerTypes None));
       };
     MenuItem
       { title = "Exit"; shortcut = "e"; action = (fun () -> Navigation Exit) };
@@ -47,7 +53,9 @@ let get_player_count_prompt =
     PromptItem
       {
         title = "Get player count";
-        action = (fun () -> Prompt SelectPlayerCount);
-        selection = None
+        action = (fun arg -> Prompt (SelectPlayerCount arg));
+        selection = None;
       };
+    MenuItem
+      { title = "Back"; shortcut = "b"; action = (fun () -> Navigation Start) };
   ]
