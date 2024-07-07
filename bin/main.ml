@@ -3,35 +3,41 @@ open Unogame.Common
 open Printf
 
 let main_menu = { title = "Main menu"; items = menu_items }
-
-let options_menu =
-  { title = "Options menu"; items = options_menu_items }
+let options_menu = { title = "Options menu"; items = options_menu_items }
 
 let player_count_prompt =
   { title = "Add player count"; items = get_player_count_prompt }
 
 let clear_screen () = ignore (Sys.command "clear")
 
-type selected_item = SelectedItems of menu_item list | Selection of string | Nil
-
-let get_selection (items: selection_item list): selected_item =
+let get_selection (items : selection_item list) =
   let selectionText = read_line () in
-    match items with 
-    | [] -> Nil
-    | MenuItem _ :: _ -> SelectedItems (List.filter (fun x -> x.shortcut = selectionText) items
-    | PromptItem _ :: _ -> Selection selectionText
+  List.find_opt
+    (fun x ->
+      match x with
+      | MenuItem n -> n.shortcut = selectionText
+      | PromptItem _ -> true)
+    items
+  |> Option.map (function
+       | MenuItem m -> MenuItem m
+       | PromptItem p -> PromptItem { p with selection = Some selectionText })
 
 let rec loop model : unit =
   List.iter draw_selection_item model.items;
   match get_selection model.items with
-  | [] ->
+  | None ->
       clear_screen ();
       print_endline "Invalid choice!";
       loop model
-  | selected :: _ ->
+  | Some selected -> (
       clear_screen ();
-      printf "You chose: %s\n" selected.title;
-      message_handler (selected.action ())
+      let execute_action action title =
+        printf "You chose: %s\n" title;
+        message_handler (action ())
+      in
+      match selected with
+      | MenuItem m -> execute_action m.action m.title
+      | PromptItem p -> execute_action p.action p.title)
 
 and message_handler (message : message) : unit =
   match message with

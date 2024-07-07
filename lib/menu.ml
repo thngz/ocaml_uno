@@ -1,9 +1,14 @@
 open Common
 
 type menu_item = { title : string; shortcut : string; action : unit -> message }
-type prompt_item = { title : string; action : unit -> message }
+type prompt_item = { title : string; action : unit -> message; selection: string option}
 type selection_item = MenuItem of menu_item | PromptItem of prompt_item
 type menu = { items : selection_item list; title : string }
+
+let draw_selection_item (item : selection_item) =
+  match item with
+  | MenuItem mi -> Printf.printf "%s) %s\n" mi.shortcut mi.title
+  | PromptItem pi -> Printf.printf ">>> %s\n" pi.title
 
 let menu_items =
   [
@@ -21,14 +26,16 @@ let menu_items =
 
 let options_menu_items =
   [
-    PromptItem
+    MenuItem
       {
         title = "Select player amount";
+        shortcut = "1";
         action = (fun () -> Prompt SelectPlayerCount);
       };
-    PromptItem
+    MenuItem
       {
         title = "Toggle player types";
+        shortcut = "2";
         action = (fun () -> Prompt TogglePlayerTypes);
       };
     MenuItem
@@ -37,13 +44,10 @@ let options_menu_items =
 
 let get_player_count_prompt =
   [
-    PromptItem {
-      title = "Get player count";
-      action = (fun () -> Prompt SelectPlayerCount);
-    };
+    PromptItem
+      {
+        title = "Get player count";
+        action = (fun () -> Prompt SelectPlayerCount);
+        selection = None
+      };
   ]
-
-let draw_selection_item (item : selection_item) =
-  match item with
-  | MenuItem mi -> Printf.printf "%s) %s\n" mi.shortcut mi.title
-  | PromptItem pi -> Printf.printf ">>> %s\n" pi.title
