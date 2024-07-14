@@ -1,7 +1,13 @@
+open Player
 
-type navigation_message = Start | PrevGames | Exit 
-type prompt_message = SelectPlayerCount of string option | TogglePlayerTypes of string option
+type navigation_message = Start | PrevGames | Exit
 
-type message = Navigation of navigation_message | Prompt of prompt_message
+type prompt_message =
+  | SelectPlayerCount of string 
+  | TogglePlayerTypes of string
 
+type game_config = { player_count : int; players : player list }
 
+type message =
+  | Navigate of navigation_message
+  | Prompt of prompt_message
