@@ -1,13 +1,17 @@
-open Player
+open Printf
 
 type navigation_message = Start | PrevGames | Exit
 
 type prompt_message =
-  | SelectPlayerCount of string 
+  | SelectPlayerCount of string
   | TogglePlayerTypes of string
 
-type game_config = { player_count : int; players : player list }
+type message = Navigate of navigation_message | Prompt of prompt_message
 
-type message =
-  | Navigate of navigation_message
-  | Prompt of prompt_message
+let safe_str_to_int (convertable : string) (fallback : int)
+    (convertable_name : string) =
+  match int_of_string_opt convertable with
+  | Some p -> p
+  | None ->
+      printf "Please enter correct %s\n" convertable_name;
+      fallback

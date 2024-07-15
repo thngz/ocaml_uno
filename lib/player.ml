@@ -10,3 +10,8 @@ let draw_player player =
 
 let toggle_type p_type =
   match p_type with Human -> Computer | Computer -> Human
+
+let draw_players players =
+  List.iteri (fun i p ->
+      printf "%d) " i;
+      draw_player p) players

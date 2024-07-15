@@ -1,14 +1,12 @@
 open Unogame.Menu
 open Unogame.Common
+open Unogame.Config
 open Unogame.Player
-open Unogame.Utils
 open Printf
 
-let main_menu = { title = "Main menu"; items = menu_items }
-let options_menu = { title = "Options menu"; items = options_menu_items }
 let clear_screen () = ignore (Sys.command "clear")
 
-let get_selection (items : selection_item list) =
+let get_selection (items : ui_item list) =
   let selectionText = read_line () in
   List.find_opt
     (fun x ->
@@ -20,42 +18,25 @@ let get_selection (items : selection_item list) =
        | MenuItem m -> MenuItem m
        | PromptItem p -> PromptItem { p with selection = Some selectionText })
 
-let set_player_count input config =
-  let player_count = safe_str_to_int input config.player_count "player count" in
-  { config with player_count }
-
-let set_selected_player_type input config =
-  let player_index = safe_str_to_int input 0 "player index" in
-  let updated_players =
-    List.mapi
-      (fun i player ->
-        if i = player_index then
-          { player with p_type = toggle_type player.p_type }
-        else player)
-      config.players
-  in
-
-  { config with players = updated_players }
-
-let rec loop model game_config : unit =
+let rec loop (model : menu) (config : config) : unit =
   clear_screen ();
-  List.iter draw_selection_item model.items;
+  draw_menu model;
 
   match get_selection model.items with
   | None ->
       print_endline "Invalid choice!";
-      loop model game_config
+      loop model config
   | Some selected -> (
       match selected with
       | MenuItem m ->
           printf "You chose: %s\n" m.title;
-          message_handler (m.action ()) game_config
+          message_handler (m.action ()) config
       | PromptItem p -> (
           match p.selection with
-          | Some s -> message_handler (p.action s) game_config
+          | Some s -> message_handler (p.action s) config
           | None -> printf "Prompt returned nothing"))
 
-and message_handler message config =
+and message_handler (message : message) (config : config) =
   match message with
   | Navigate n -> (
       match n with
@@ -66,32 +47,16 @@ and message_handler message config =
       match p with
       | SelectPlayerCount selection ->
           printf "Selection is: %s\n" selection;
-          if selection = String.empty then
-            loop
-              { title = "Get player count"; items = get_player_count_prompt }
-              config
-          else
-            loop
-              { title = "Get player count"; items = get_player_count_prompt }
-              (set_player_count selection config)
+          if selection = String.empty then loop player_count_prompt config
+          else loop player_count_prompt (set_player_count selection config)
       | TogglePlayerTypes selection ->
           printf "Selection is: %s\n" selection;
-          List.iteri
-            (fun i p ->
-              printf "%d) " i;
-              draw_player p)
-            config.players;
-          if selection = String.empty then
-            loop
-              { title = "Toggle player types"; items = toggle_player_at_prompt }
-              config
+          if selection = String.empty then loop playertype_prompt config
           else
-            loop
-              { title = "Toggle player types"; items = toggle_player_at_prompt }
-              (set_selected_player_type selection config))
+            loop playertype_prompt (set_selected_player_type selection config))
 
 let () =
-  loop main_menu
+  let default_config =
     {
       player_count = 2;
       players =
@@ -100,3 +65,5 @@ let () =
           { nickname = "Ai 1"; p_type = Computer };
         ];
     }
+  in
+  loop main_menu default_config
