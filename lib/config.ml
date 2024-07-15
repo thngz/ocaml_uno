@@ -1,11 +1,27 @@
 open Player
 open Common
+open Printf
 
 type config = { player_count : int; players : player list }
 
 let set_player_count (input : string) (config : config) =
   let player_count = safe_str_to_int input config.player_count "player count" in
-  { config with player_count }
+  let updated_players =
+    match player_count with
+    | x when x > config.player_count ->
+        config.players
+        @ [
+            {
+              nickname = sprintf "Ai %d" (List.length config.players);
+              p_type = Computer;
+            };
+          ]
+    | x when x < config.player_count ->
+        List.filteri (fun i _ -> i < config.player_count - 1) config.players
+    | _ -> config.players
+  in
+
+  { player_count; players = updated_players }
 
 let set_selected_player_type (input : string) (config : config) =
   let player_index = safe_str_to_int input 0 "player index" in
@@ -19,3 +35,7 @@ let set_selected_player_type (input : string) (config : config) =
   in
 
   { config with players = updated_players }
+
+let draw_config config =
+  printf "Currently there are %d players \n" config.player_count;
+  draw_players config.players
