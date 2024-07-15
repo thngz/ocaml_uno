@@ -2,11 +2,10 @@ open Unogame.Menu
 open Unogame.Common
 open Unogame.Config
 open Unogame.Player
+open Unogame.Game
 open Printf
 
 type loop_params = { menu : menu; config : config; should_draw_config : bool }
-
-let clear_screen () = ignore (Sys.command "clear")
 
 let get_selection (items : ui_item list) =
   let selectionText = read_line () in
@@ -42,8 +41,11 @@ and message_handler (message : message) (params : loop_params) =
   match message with
   | Navigate n -> (
       match n with
-        | Start -> loop { params with menu = options_menu; should_draw_config = false }
-        | PrevGames -> loop { params with menu = options_menu; should_draw_config = false }
+      | Start ->
+          loop { params with menu = options_menu; should_draw_config = false }
+      | PrevGames ->
+          loop { params with menu = options_menu; should_draw_config = false }
+      | StartGame -> start_game params.config
       | Exit -> exit 0)
   | Prompt p -> (
       match p with
@@ -86,8 +88,8 @@ let () =
       player_count = 2;
       players =
         [
-          { nickname = "Player 1"; p_type = Human };
-          { nickname = "Ai 1"; p_type = Computer };
+          { nickname = "Player 1"; p_type = Human; hand = None };
+          { nickname = "Ai 1"; p_type = Computer; hand = None };
         ];
     }
   in

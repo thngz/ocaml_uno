@@ -41,14 +41,20 @@ let options_menu =
     [
       MenuItem
         {
-          title = "Select player amount";
+          title = "Start game!";
           shortcut = "1";
+          action = (fun () -> Navigate StartGame);
+        };
+      MenuItem
+        {
+          title = "Select player amount";
+          shortcut = "2";
           action = (fun () -> Prompt (SelectPlayerCount String.empty));
         };
       MenuItem
         {
           title = "Toggle player types";
-          shortcut = "2";
+          shortcut = "3";
           action = (fun () -> Prompt (TogglePlayerTypes String.empty));
         };
       MenuItem
