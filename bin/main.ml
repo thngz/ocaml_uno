@@ -88,8 +88,8 @@ let () =
       player_count = 2;
       players =
         [
-          { nickname = "Player 1"; p_type = Human; hand = None };
-          { nickname = "Ai 1"; p_type = Computer; hand = None };
+          { nickname = "Player 1"; p_type = Human; hand = [] };
+          { nickname = "Ai 1"; p_type = Computer; hand = [] };
         ];
     }
   in
