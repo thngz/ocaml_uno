@@ -2,7 +2,11 @@ open Player
 open Common
 open Printf
 
-type config = { player_count : int; players : player list }
+type config = {
+  player_count : int;
+  players : player list;
+  default_hand_size : int;
+}
 
 let set_player_count (input : string) (config : config) =
   let player_count = safe_str_to_int input config.player_count "player count" in
@@ -21,8 +25,7 @@ let set_player_count (input : string) (config : config) =
         List.filteri (fun i _ -> i < config.player_count - 1) config.players
     | _ -> config.players
   in
-
-  { player_count; players = updated_players }
+  { config with player_count; players = updated_players }
 
 let set_selected_player_type (input : string) (config : config) =
   let player_index = safe_str_to_int input 0 "player index" in

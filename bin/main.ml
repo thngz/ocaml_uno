@@ -91,6 +91,7 @@ let () =
           { nickname = "Player 1"; p_type = Human; hand = [] };
           { nickname = "Ai 1"; p_type = Computer; hand = [] };
         ];
+      default_hand_size = 7;
     }
   in
   loop { menu = main_menu; config = default_config; should_draw_config = false }
