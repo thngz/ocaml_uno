@@ -18,7 +18,7 @@ type game = {
   game_state : game_state;
 }
 
-let distribute_cards (deck, players) : cards * player list =
+let distribute_cards deck players hand_size : cards * player list =
   let rec aux deck players player_index deal_amount =
     let player_opt = List.nth_opt players player_index in
     match player_opt with
@@ -37,13 +37,13 @@ let distribute_cards (deck, players) : cards * player list =
                  players)
               (player_index + 1) (deal_amount - 1))
   in
-  (*Deal out 2x hand_size cards *)
-  aux deck players 0 14
+  aux deck players 0 (List.length players * hand_size)
 
 let get_next_player current_index players : player * int =
-  match List.nth_opt players current_index with
+  let next_index = current_index + 1 in
+  match List.nth_opt players next_index with
   | None -> (List.nth players 0, 0)
-  | Some p -> (p, current_index + 1)
+  | Some p -> (p, next_index)
 
 let render_current_game_state game =
   print_endline "*******************************";
@@ -74,6 +74,7 @@ let rec game_loop (game : game) =
               current_player_index = next_index;
             }
       | Computer ->
+          let _ = read_line () in
           game_loop
             {
               game with
@@ -84,7 +85,9 @@ let rec game_loop (game : game) =
   | End -> ()
 
 and start_game (config : config) =
-  let deck, players = distribute_cards (create_deck, config.players) in
+  let deck, players =
+    distribute_cards create_deck config.players config.default_hand_size
+  in
   let game =
     {
       current_player = List.nth players 0;
