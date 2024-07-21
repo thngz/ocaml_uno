@@ -11,7 +11,7 @@ type prompt_item = {
 type ui_item = MenuItem of menu_item | PromptItem of prompt_item
 type menu = { items : ui_item list; title : string }
 
-val draw_menu : menu -> unit
+val render_menu : menu -> unit
 
 val main_menu : menu
 val options_menu : menu

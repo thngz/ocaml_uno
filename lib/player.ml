@@ -4,7 +4,7 @@ open Card
 type player_type = Human | Computer
 type player = { nickname : string; p_type : player_type; hand: cards}
 
-let draw_player player =
+let render_player player =
   match player.p_type with
   | Human -> printf "Human player with name %s \n" player.nickname
   | Computer -> printf "Computer player with name %s \n" player.nickname
@@ -12,7 +12,9 @@ let draw_player player =
 let toggle_type p_type =
   match p_type with Human -> Computer | Computer -> Human
 
-let draw_players players =
+let render_players players =
   List.iteri (fun i p ->
       printf "%d) " i;
-      draw_player p) players
+      render_player p) players
+
+    

@@ -21,8 +21,8 @@ let get_selection (items : ui_item list) =
 
 let rec loop (params : loop_params) : unit =
   clear_screen ();
-  if params.should_draw_config then draw_config params.config else ();
-  draw_menu params.menu;
+  if params.should_draw_config then render_config params.config else ();
+  render_menu params.menu;
   match get_selection params.menu.items with
   | None ->
       print_endline "Invalid choice!";

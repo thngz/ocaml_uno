@@ -8,4 +8,4 @@ type config = {
 
 val set_player_count : string -> config -> config
 val set_selected_player_type : string -> config -> config
-val draw_config : config -> unit
+val render_config : config -> unit

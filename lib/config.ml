@@ -40,6 +40,6 @@ let set_selected_player_type (input : string) (config : config) =
 
   { config with players = updated_players }
 
-let draw_config config =
+let render_config config =
   printf "Currently there are %d players \n" config.player_count;
-  draw_players config.players
+  render_players config.players

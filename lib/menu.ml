@@ -11,13 +11,13 @@ type prompt_item = {
 type ui_item = MenuItem of menu_item | PromptItem of prompt_item
 type menu = { items : ui_item list; title : string }
 
-let draw_menu (menu : menu) =
-  let draw_menu_item (item : ui_item) =
+let render_menu (menu : menu) =
+  let render_menu_item (item : ui_item) =
     match item with
     | MenuItem mi -> Printf.printf "%s) %s\n" mi.shortcut mi.title
     | PromptItem pi -> Printf.printf "%s >>> " pi.title
   in
-  List.iter draw_menu_item menu.items
+  List.iter render_menu_item menu.items
 
 let main_menu =
   let main_menu_items =
