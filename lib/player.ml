@@ -17,4 +17,12 @@ let render_players players =
       printf "%d) " i;
       render_player p) players
 
+let render_player_information player =
+    print_endline "===============================";
+    render_player player;
     
+    print_endline "===============================";
+    printf "Current hand has %d cards\n" (List.length player.hand);
+    draw_cards player.hand;
+    print_endline "===============================";
+

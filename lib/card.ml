@@ -77,4 +77,4 @@ let card_to_string card =
     (color_to_string card.color)
 
 let draw_cards cards =
-   List.iter (fun card -> print_endline (card_to_string card)) cards 
+  List.iteri (fun i card -> printf "%d) %s \n" i (card_to_string card)) cards

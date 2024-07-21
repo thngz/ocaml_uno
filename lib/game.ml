@@ -1,16 +1,17 @@
 open Config
 open Common
-open Printf
 open Card
 open Player
+(* open Printf *)
 
 type direction = Clockwise | CounterClockwise
-type game_state = Starting | Running | Uno | End
+type game_state = Running | Uno | End
 
 type game = {
   current_player : player;
   current_player_index : int;
   game_config : config;
+  players : player list;
   deck : cards;
   cards_on_field : cards;
   direction : direction;
@@ -18,10 +19,10 @@ type game = {
 }
 
 let distribute_cards (deck, players) : cards * player list =
-  let rec aux deck players player_index hand_size =
+  let rec aux deck players player_index deal_amount =
     let player_opt = List.nth_opt players player_index in
     match player_opt with
-    | None when hand_size > 0 -> aux deck players 0 hand_size
+    | None when deal_amount > 0 -> aux deck players 0 deal_amount
     | None -> (deck, players)
     | Some _ -> (
         match deck with
@@ -34,32 +35,38 @@ let distribute_cards (deck, players) : cards * player list =
                  (fun i p ->
                    if i = player_index then { p with hand = x :: p.hand } else p)
                  players)
-              (player_index + 1) (hand_size - 1))
+              (player_index + 1) (deal_amount - 1))
   in
+  (*Deal out 2x hand_size cards *)
+  aux deck players 0 14
 
-  aux deck players 0 7
-
-let get_next_player (current_index : int) (players : player list) : player * int
-    =
+let get_next_player current_index players : player * int =
   match List.nth_opt players current_index with
   | None -> (List.nth players 0, 0)
   | Some p -> (p, current_index + 1)
 
+let render_current_game_state game =
+  print_endline "*******************************";
+  print_endline "Current game field";
+  if List.length game.cards_on_field = 0 then
+    print_endline "No cards have been played yet"
+  else draw_cards game.cards_on_field;
+  print_endline "*******************************";
+  print_endline "";
+  print_endline "";
+  render_player_information game.current_player
+
 let rec game_loop (game : game) =
   clear_screen ();
-
-  printf "Current player %s" game.current_player.nickname;
   match game.game_state with
-  | Starting -> handle_starting_state game
   | Running -> (
       let next_player, next_index =
-        get_next_player game.current_player_index game.game_config.players
+        get_next_player game.current_player_index game.players
       in
-
+      render_current_game_state game;
       match game.current_player.p_type with
       | Human ->
           let _ = read_line () in
-
           game_loop
             {
               game with
@@ -67,7 +74,6 @@ let rec game_loop (game : game) =
               current_player_index = next_index;
             }
       | Computer ->
-          let _ = read_line () in
           game_loop
             {
               game with
@@ -77,28 +83,18 @@ let rec game_loop (game : game) =
   | Uno -> ()
   | End -> ()
 
-and handle_starting_state game =
-  let players = game.game_config.players in
-
-  let updated_deck, updated_players = distribute_cards (game.deck, players) in
-  game_loop
-    {
-      game with
-      game_config = { game.game_config with players = updated_players };
-      deck = updated_deck;
-      game_state = Running;
-    }
-
 and start_game (config : config) =
+  let deck, players = distribute_cards (create_deck, config.players) in
   let game =
     {
-      current_player = List.nth config.players 0;
+      current_player = List.nth players 0;
       current_player_index = 0;
       game_config = config;
-      deck = create_deck;
+      players;
+      deck;
       cards_on_field = [];
       direction = Clockwise;
-      game_state = Starting;
+      game_state = Running;
     }
   in
   game_loop game
