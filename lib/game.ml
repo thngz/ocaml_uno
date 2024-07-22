@@ -2,7 +2,7 @@ open Config
 open Common
 open Card
 open Player
-(* open Printf *)
+open Printf
 
 type direction = Clockwise | CounterClockwise
 type game_state = Running | Uno | End
@@ -48,9 +48,13 @@ let get_next_player current_index players : player * int =
 let render_current_game_state game =
   print_endline "*******************************";
   print_endline "Current game field";
-  if List.length game.cards_on_field = 0 then
-    print_endline "No cards have been played yet"
-  else draw_cards game.cards_on_field;
+  (match game.cards_on_field with
+  | [] -> print_endline "No cards have been played yet"
+  | x :: xs ->
+      printf "Currently at the top of the stack %s\n" (card_to_string x);
+      printf "History \t\t\n";
+      draw_cards xs);
+
   print_endline "*******************************";
   print_endline "";
   print_endline "";
@@ -60,29 +64,36 @@ let rec game_loop (game : game) =
   clear_screen ();
   match game.game_state with
   | Running -> (
-      let next_player, next_index =
-        get_next_player game.current_player_index game.players
-      in
       render_current_game_state game;
       match game.current_player.p_type with
-      | Human ->
-          let _ = read_line () in
-          game_loop
-            {
-              game with
-              current_player = next_player;
-              current_player_index = next_index;
-            }
+      | Human -> (
+          printf "Select a card to play >>> ";
+
+          match int_of_string_opt (read_line ()) with
+          | Some i -> (
+              match List.nth_opt game.current_player.hand i with
+              | Some card ->
+                  printf "You chose %s" (card_to_string card);
+                  give_turn_to_next
+                    { game with cards_on_field = card :: game.cards_on_field }
+              | None -> game_loop game)
+          | None -> give_turn_to_next game)
       | Computer ->
           let _ = read_line () in
-          game_loop
-            {
-              game with
-              current_player = next_player;
-              current_player_index = next_index;
-            })
+          give_turn_to_next game)
   | Uno -> ()
   | End -> ()
+
+and give_turn_to_next game =
+  let next_player, next_index =
+    get_next_player game.current_player_index game.players
+  in
+  game_loop
+    {
+      game with
+      current_player = next_player;
+      current_player_index = next_index;
+    }
 
 and start_game (config : config) =
   let deck, players =

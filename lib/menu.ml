@@ -92,3 +92,4 @@ let playertype_prompt =
     ]
   in
   { title = "Toggle player types"; items = playertype_toggle_items }
+
