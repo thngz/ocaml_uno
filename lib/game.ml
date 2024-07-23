@@ -46,14 +46,14 @@ let get_next_player current_index players : player * int =
   | Some p -> (p, next_index)
 
 let render_current_game_state game =
-  print_endline "*******************************";
   print_endline "Current game field";
+  print_endline "*******************************";
   (match game.cards_on_field with
   | [] -> print_endline "No cards have been played yet"
-  | x :: xs ->
-      printf "Currently at the top of the stack %s\n" (card_to_string x);
-      printf "History \t\t\n";
-      draw_cards xs);
+  | x :: _ ->
+      printf "Currently at the top of the table:\n%s\n" (card_to_string x);
+      printf "Log: \t\t\n";
+      draw_cards game.cards_on_field);
 
   print_endline "*******************************";
   print_endline "";
@@ -66,18 +66,9 @@ let rec game_loop (game : game) =
   | Running -> (
       render_current_game_state game;
       match game.current_player.p_type with
-      | Human -> (
+      | Human ->
           printf "Select a card to play >>> ";
-
-          match int_of_string_opt (read_line ()) with
-          | Some i -> (
-              match List.nth_opt game.current_player.hand i with
-              | Some card ->
-                  printf "You chose %s" (card_to_string card);
-                  give_turn_to_next
-                    { game with cards_on_field = card :: game.cards_on_field }
-              | None -> game_loop game)
-          | None -> give_turn_to_next game)
+          handle_player_move game
       | Computer ->
           let _ = read_line () in
           give_turn_to_next game)
@@ -95,9 +86,36 @@ and give_turn_to_next game =
       current_player_index = next_index;
     }
 
+and handle_player_move game =
+  match int_of_string_opt (read_line ()) with
+  | Some i when i < List.length game.current_player.hand && i >= 0 ->
+      let selected = List.nth game.current_player.hand i in
+      give_turn_to_next (place_card game i selected)
+  | Some _ -> game_loop game
+  | None -> game_loop game
+
+and place_card game card_index card : game =
+  let updated_hand =
+    List.filteri (fun i _ -> i != card_index) game.current_player.hand
+  in
+  let updated_players =
+    List.mapi
+      (fun i p ->
+        if i = game.current_player_index then { p with hand = updated_hand }
+        else p)
+      game.players
+  in
+  {
+    game with
+    cards_on_field = card :: game.cards_on_field;
+    players = updated_players;
+  }
+
 and start_game (config : config) =
   let deck, players =
-    distribute_cards create_deck config.players config.default_hand_size
+    distribute_cards
+      (create_deck |> shuffle_cards)
+      config.players config.default_hand_size
   in
   let game =
     {

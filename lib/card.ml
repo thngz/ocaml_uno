@@ -1,4 +1,5 @@
 open Printf
+open Colors
 
 type card_color = Red | Blue | Green | Yellow
 
@@ -58,32 +59,27 @@ let create_deck =
 
 let card_to_string card =
   let color_to_string = function
-    | Red -> "Red"
-    | Blue -> "Blue"
-    | Green -> "Green"
-    | Yellow -> "Yellow"
+    | Red -> paint_red "Red"
+    | Blue -> paint_blue "Blue"
+    | Green -> paint_green "Green"
+    | Yellow -> paint_yellow "Yellow"
   in
-  let value_to_string card_value =
-    match card_value with
-    | CommonCard c -> (
-        match c with
-        | Value0 -> "0"
-        | Value1 -> "1"
-        | Value2 -> "2"
-        | Value3 -> "3"
-        | Value4 -> "4"
-        | Value5 -> "5"
-        | Value6 -> "6"
-        | Value7 -> "7"
-        | Value8 -> "8"
-        | Value9 -> "9")
-    | SpecialCard s -> (
-        match s with
-        | ValueSkip -> "Skip"
-        | ValueReverse -> "Reverse"
-        | ValueDrawTwo -> "Draw Two"
-        | ValueDrawFour -> "Draw Four"
-        | ValueWild -> "Wild")
+  let value_to_string = function
+    | SpecialCard ValueSkip -> "Skip"
+    | SpecialCard ValueReverse -> "Reverse"
+    | SpecialCard ValueDrawTwo -> "Draw Two"
+    | SpecialCard ValueDrawFour -> "Draw Four"
+    | SpecialCard ValueWild -> "Wild"
+    | CommonCard Value0 -> "0"
+    | CommonCard Value1 -> "1"
+    | CommonCard Value2 -> "2"
+    | CommonCard Value3 -> "3"
+    | CommonCard Value4 -> "4"
+    | CommonCard Value5 -> "5"
+    | CommonCard Value6 -> "6"
+    | CommonCard Value7 -> "7"
+    | CommonCard Value8 -> "8"
+    | CommonCard Value9 -> "9"
   in
   sprintf "%s of %s"
     (value_to_string card.card_value)
@@ -91,3 +87,9 @@ let card_to_string card =
 
 let draw_cards cards =
   List.iteri (fun i card -> printf "%d) %s \n" i (card_to_string card)) cards
+
+let shuffle_cards (cards : cards) =
+  Random.self_init ();
+  let nd = List.map (fun c -> (Random.bits (), c)) cards in
+  let sond = List.sort compare nd in
+  List.map snd sond
