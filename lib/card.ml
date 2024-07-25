@@ -81,6 +81,7 @@ let card_to_string card =
     | CommonCard Value8 -> "8"
     | CommonCard Value9 -> "9"
   in
+
   sprintf "%s of %s"
     (value_to_string card.card_value)
     (color_to_string card.color)

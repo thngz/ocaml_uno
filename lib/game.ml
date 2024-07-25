@@ -3,6 +3,7 @@ open Common
 open Card
 open Player
 open Printf
+open Colors
 
 type direction = Clockwise | CounterClockwise
 type game_state = Running | Uno | End
@@ -16,6 +17,7 @@ type game = {
   cards_on_field : cards;
   direction : direction;
   game_state : game_state;
+  notification : string;
 }
 
 let distribute_cards deck players hand_size : cards * player list =
@@ -52,6 +54,8 @@ let render_current_game_state game =
   | [] -> print_endline "No cards have been played yet"
   | x :: _ ->
       printf "Currently at the top of the table:\n%s\n" (card_to_string x);
+      print_endline "";
+      print_endline "";
       printf "Log: \t\t\n";
       draw_cards game.cards_on_field);
 
@@ -62,12 +66,13 @@ let render_current_game_state game =
 
 let rec game_loop (game : game) =
   clear_screen ();
+  print_endline (paint_red game.notification);
   match game.game_state with
   | Running -> (
       render_current_game_state game;
       match game.current_player.p_type with
       | Human ->
-          printf "Select a card to play >>> ";
+          printf "Select a card to play (s to skip) >>> ";
           handle_player_move game
       | Computer ->
           let _ = read_line () in
@@ -87,12 +92,31 @@ and give_turn_to_next game =
     }
 
 and handle_player_move game =
-  match int_of_string_opt (read_line ()) with
-  | Some i when i < List.length game.current_player.hand && i >= 0 ->
-      let selected = List.nth game.current_player.hand i in
-      give_turn_to_next (place_card game i selected)
-  | Some _ -> game_loop game
-  | None -> game_loop game
+  match read_line () with
+  | "s" ->
+      give_turn_to_next
+        {
+          game with
+          notification =
+            sprintf "%s skipped their turn!" game.current_player.nickname;
+        }
+  | str -> (
+      match int_of_string_opt str with
+      | Some i when i < List.length game.current_player.hand && i >= 0 ->
+          let selected = List.nth game.current_player.hand i in
+          if List.length game.cards_on_field > 0 then
+            let top_card = List.hd game.cards_on_field in
+            if
+              selected.card_value = top_card.card_value
+              || selected.color = top_card.color
+                then give_turn_to_next (place_card game i selected)
+            else
+              display_notification game
+                "Cannot play this card, ensure it matches the color or number \
+                 of the top card!"
+          else give_turn_to_next (place_card game i selected)
+      | Some _ -> display_notification game "Invalid index provided!"
+      | None -> display_notification game "Invalid type of argument provided!")
 
 and place_card game card_index card : game =
   let updated_hand =
@@ -111,6 +135,8 @@ and place_card game card_index card : game =
     players = updated_players;
   }
 
+and display_notification game text = game_loop { game with notification = text }
+
 and start_game (config : config) =
   let deck, players =
     distribute_cards
@@ -127,6 +153,7 @@ and start_game (config : config) =
       cards_on_field = [];
       direction = Clockwise;
       game_state = Running;
+      notification = String.empty;
     }
   in
   game_loop game
