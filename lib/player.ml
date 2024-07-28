@@ -2,7 +2,7 @@ open Printf
 open Card
 
 type player_type = Human | Computer
-type player = { nickname : string; p_type : player_type; hand: cards}
+type player = { nickname : string; p_type : player_type; hand: cards; hand_length: int}
 
 let render_player player =
   match player.p_type with

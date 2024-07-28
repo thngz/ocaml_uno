@@ -35,19 +35,19 @@ let distribute_cards deck players hand_size : cards * player list =
             aux xs
               (List.mapi
                  (fun i p ->
-                   if i = player_index then { p with hand = x :: p.hand } else p)
+                   if i = player_index then
+                     {
+                       p with
+                       hand = x :: p.hand;
+                       hand_length = p.hand_length + 1;
+                     }
+                   else p)
                  players)
               (player_index + 1) (deal_amount - 1))
   in
   aux deck players 0 (List.length players * hand_size)
 
-let get_next_player current_index players : player * int =
-  let next_index = current_index + 1 in
-  match List.nth_opt players next_index with
-  | None -> (List.nth players 0, 0)
-  | Some p -> (p, next_index)
-
-let render_current_game_state game =
+let render_current_game_state (game : game) : game =
   print_endline "Current game field";
   print_endline "*******************************";
   (match game.cards_on_field with
@@ -62,65 +62,24 @@ let render_current_game_state game =
   print_endline "*******************************";
   print_endline "";
   print_endline "";
-  render_player_information game.current_player
+  render_player_information game.current_player;
+  game
 
-let rec game_loop (game : game) =
-  clear_screen ();
-  print_endline (paint_red game.notification);
-  match game.game_state with
-  | Running -> (
-      render_current_game_state game;
-      match game.current_player.p_type with
-      | Human ->
-          printf "Select a card to play (s to skip) >>> ";
-          handle_player_move game
-      | Computer ->
-          let _ = read_line () in
-          give_turn_to_next game)
-  | Uno -> ()
-  | End -> ()
-
-and give_turn_to_next game =
+let set_next_player (game : game) : game =
+  let get_next_player current_index players : player * int =
+    let next_index = current_index + 1 in
+    match List.nth_opt players next_index with
+    | None -> (List.nth players 0, 0)
+    | Some p -> (p, next_index)
+  in
   let next_player, next_index =
     get_next_player game.current_player_index game.players
   in
-  game_loop
-    {
-      game with
-      current_player = next_player;
-      current_player_index = next_index;
-    }
+  { game with current_player = next_player; current_player_index = next_index }
 
-and handle_player_move game =
-  match read_line () with
-  | "s" ->
-      give_turn_to_next
-        {
-          game with
-          notification =
-            sprintf "%s skipped their turn!" game.current_player.nickname;
-        }
-  | str -> (
-      match int_of_string_opt str with
-      | Some i when i < List.length game.current_player.hand && i >= 0 ->
-          let selected = List.nth game.current_player.hand i in
-          if List.length game.cards_on_field > 0 then
-            let top_card = List.hd game.cards_on_field in
-            if
-              selected.card_value = top_card.card_value
-              || selected.color = top_card.color
-                then give_turn_to_next (place_card game i selected)
-            else
-              display_notification game
-                "Cannot play this card, ensure it matches the color or number \
-                 of the top card!"
-          else give_turn_to_next (place_card game i selected)
-      | Some _ -> display_notification game "Invalid index provided!"
-      | None -> display_notification game "Invalid type of argument provided!")
-
-and place_card game card_index card : game =
+let place_card (game : game) card index : game =
   let updated_hand =
-    List.filteri (fun i _ -> i != card_index) game.current_player.hand
+    List.filteri (fun i _ -> i != index) game.current_player.hand
   in
   let updated_players =
     List.mapi
@@ -135,9 +94,52 @@ and place_card game card_index card : game =
     players = updated_players;
   }
 
-and display_notification game text = game_loop { game with notification = text }
+let handle_player_move (game : game) : game =
+  match read_line () with
+  | "s" ->
+      let notification =
+        sprintf "%s skipped their turn!" game.current_player.nickname
+      in
+      { game with notification }
+  | str -> (
+      match int_of_string_opt str with
+      | Some index when index < game.current_player.hand_length && index >= 0 ->
+          let card = List.nth game.current_player.hand index in
+          if List.length game.cards_on_field > 0 then
+            let top_card = List.hd game.cards_on_field in
+            if
+              card.card_value = top_card.card_value
+              || card.color = top_card.color
+            then game
+            else
+              let notification =
+                "Cannot play this card, ensure it matches the color or  number \
+                 of the top card!"
+              in
+              { game with notification }
+          else game
+      | Some _ -> { game with notification = "Invalid index provided!" }
+      | None ->
+          { game with notification = "Invalid type of argument provided!" })
 
-and start_game (config : config) =
+let rec game_loop (game : game) : unit =
+  clear_screen ();
+  print_endline (paint_red game.notification);
+  match game.game_state with
+  | Running -> game |> render_current_game_state |> handle_move
+  | Uno -> game |> game_loop (*Does nothing yet..*)
+  | End -> game |> game_loop (*Likewise*)
+
+and handle_move (game : game) : unit =
+  match game.current_player.p_type with
+  | Human ->
+      printf "Select a card to play (s to skip) >>> ";
+      game |> handle_player_move |> set_next_player |> game_loop
+  | Computer ->
+      let _ = read_line () in
+      game |> set_next_player |> game_loop
+
+let start_game (config : config) : unit =
   let deck, players =
     distribute_cards
       (create_deck |> shuffle_cards)

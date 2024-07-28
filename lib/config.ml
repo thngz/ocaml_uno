@@ -19,6 +19,7 @@ let set_player_count (input : string) (config : config) =
                   nickname = sprintf "Ai %d" (List.length config.players);
                   p_type = Computer;
                   hand = [];
+                  hand_length = 0;
                 };
               ]
         | x when x < config.player_count ->
