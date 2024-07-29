@@ -17,7 +17,7 @@ type game = {
   cards_on_field : cards;
   direction : direction;
   game_state : game_state;
-  notification : string;
+  notification : (string, string) result;
 }
 
 let distribute_cards deck players hand_size : cards * player list =
@@ -53,7 +53,7 @@ let render_current_game_state (game : game) : game =
   (match game.cards_on_field with
   | [] -> print_endline "No cards have been played yet"
   | x :: _ ->
-      printf "Currently at the top of the table:\n%s\n" (card_to_string x);
+      printf "Currently at the top of the stack:\n%s\n" (card_to_string x);
       print_endline "";
       print_endline "";
       printf "Log: \t\t\n";
@@ -75,7 +75,9 @@ let set_next_player (game : game) : game =
   let next_player, next_index =
     get_next_player game.current_player_index game.players
   in
-  { game with current_player = next_player; current_player_index = next_index }
+  match game.notification with 
+    | Ok _ -> { game with current_player = next_player; current_player_index = next_index }
+    | Error _ -> game
 
 let place_card (game : game) card index : game =
   let updated_hand =
@@ -98,7 +100,7 @@ let handle_player_move (game : game) : game =
   match read_line () with
   | "s" ->
       let notification =
-        sprintf "%s skipped their turn!" game.current_player.nickname
+        Ok (sprintf "%s skipped their turn!" game.current_player.nickname)
       in
       { game with notification }
   | str -> (
@@ -110,23 +112,33 @@ let handle_player_move (game : game) : game =
             if
               card.card_value = top_card.card_value
               || card.color = top_card.color
-            then game
+            then place_card game card index
             else
               let notification =
-                "Cannot play this card, ensure it matches the color or  number \
-                 of the top card!"
+                Error
+                  "Cannot play this card, ensure it matches the color or  \
+                   number of the top card!"
               in
               { game with notification }
-          else game
-      | Some _ -> { game with notification = "Invalid index provided!" }
+          else place_card game card index
+      | Some _ -> { game with notification = Error "Invalid index provided!" }
       | None ->
-          { game with notification = "Invalid type of argument provided!" })
+          {
+            game with
+            notification = Error "Invalid type of argument provided!";
+          })
 
 let rec game_loop (game : game) : unit =
   clear_screen ();
-  print_endline (paint_red game.notification);
+
+  (match game.notification with
+  | Ok notification -> print_endline (paint_green notification)
+  | Error err -> print_endline (paint_red err));
+
   match game.game_state with
-  | Running -> game |> render_current_game_state |> handle_move
+  | Running ->
+      { game with notification = Ok String.empty }
+      |> render_current_game_state |> handle_move
   | Uno -> game |> game_loop (*Does nothing yet..*)
   | End -> game |> game_loop (*Likewise*)
 
@@ -155,7 +167,7 @@ let start_game (config : config) : unit =
       cards_on_field = [];
       direction = Clockwise;
       game_state = Running;
-      notification = String.empty;
+      notification = Ok String.empty;
     }
   in
   game_loop game
